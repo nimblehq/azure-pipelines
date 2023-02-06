@@ -1,0 +1,53 @@
+parameters:
+- name: 'USER_NAME'
+  type: string
+- name: 'USER_EMAIL'
+  type: string
+- name: 'USER_TOKEN'
+  type: string
+
+jobs:
+- job: publish_wiki
+  timeoutInMinutes: 1
+  displayName: Publish Wiki
+
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  variables:
+    - name: 'TEMP_CLONE_WIKI_FOLDER'
+      value: tmp_wiki
+    - name: 'WIKI_FOLDER'
+      value: .github/wiki
+    - group: 'iOS Pipelines'
+
+  steps:
+    # This step will
+    # - Create folder named `tmp_wiki`
+    # - Initialize Git
+    # - Pull old Wiki content
+    - bash: |
+        mkdir $(TEMP_CLONE_WIKI_FOLDER)
+        cd $(TEMP_CLONE_WIKI_FOLDER)
+        git init
+        git config user.name $USER_NAME
+        git config user.email $USER_EMAIL
+        git pull https://$USER_TOKEN@github.com/$(Build.Repository.Name).wiki.git
+      env:
+        USER_NAME: ${{ parameters.USER_NAME }}
+        USER_EMAIL: ${{ parameters.USER_EMAIL }}
+        USER_TOKEN: ${{ parameters.USER_TOKEN }}
+      displayName: Pull current wiki content
+
+    # This step will
+    # - Synchronize differences between `.github/wiki/` & `tmp_wiki`
+    # - Push new Wiki content
+    - bash: |
+        rsync -av --delete $(WIKI_FOLDER)/ $(TEMP_CLONE_WIKI_FOLDER)/ --exclude .git
+        cd $(TEMP_CLONE_WIKI_FOLDER)
+        git add .
+        git commit -m "Update Wiki content"
+        git push -f --set-upstream https://$USER_TOKEN@github.com/$(Build.Repository.Name).wiki.git master
+      env:
+        USER_TOKEN: ${{ parameters.USER_TOKEN }}
+      displayName: Push new wiki content
