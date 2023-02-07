@@ -19,7 +19,6 @@ jobs:
       value: tmp_wiki
     - name: 'WIKI_FOLDER'
       value: .github/wiki
-    - group: 'iOS Pipelines'
 
   steps:
     # This step will
