@@ -8,7 +8,7 @@ parameters:
 
 jobs:
 - job: publish_wiki
-  timeoutInMinutes: 1
+  timeoutInMinutes: 5
   displayName: Publish Wiki
 
   pool:
